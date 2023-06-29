@@ -380,10 +380,10 @@ void PMDParticle::ScanPositions(hid_t particleGroupId, char * objectName)
     char              datasetName[64];
     ssize_t           length;
     hsize_t           numObjects;
-    hsize_t           datasetStorageSize;
     hid_t             groupId;
     hid_t             dataSetId;
     hid_t             datasetType;
+    hid_t             datasetSpace;
     scalarDataSet     scalar;
     herr_t            err;
     H5O_info_t        objectInfo;
@@ -437,13 +437,13 @@ void PMDParticle::ScanPositions(hid_t particleGroupId, char * objectName)
 
                   // data Size
                   datasetType = H5Dget_type(dataSetId);
+                  // data Space
+                  datasetSpace = H5Dget_space(dataSetId);
                   scalar.dataSize = H5Tget_size(datasetType);
                   // data Class
                   scalar.dataClass = H5Tget_class(datasetType);
-                  // Storage size
-                  datasetStorageSize = H5Dget_storage_size(dataSetId);
                   // Number of elements
-                  scalar.numElements = int(datasetStorageSize/scalar.dataSize);
+                  scalar.numElements = H5Sget_simple_extent_npoints(datasetSpace);
 
                   H5Dclose(dataSetId);
             }
@@ -509,11 +509,11 @@ void PMDParticle::ScanMomenta(hid_t particleGroupId, char * objectName)
     int                 vectorDataSetId[3] = {-1,-1,-1};
     char                bufferName[64];
     char                datasetName[64];
-    hsize_t             datasetStorageSize;
     ssize_t             length;
     hid_t               groupId;
     hid_t               dataSetId;
     hid_t               datasetType;
+    hid_t               datasetSpace;
     scalarDataSet       scalar;
     vectorDataSet       vector;
     hsize_t             numObjects;
@@ -577,13 +577,12 @@ void PMDParticle::ScanMomenta(hid_t particleGroupId, char * objectName)
 
                 // data Size
                 datasetType = H5Dget_type(dataSetId);
+                datasetSpace = H5Dget_space(dataSetId);
                 scalar.dataSize = H5Tget_size(datasetType);
                 // data Class
                 scalar.dataClass = H5Tget_class(datasetType);
-                // Storage size
-                datasetStorageSize = H5Dget_storage_size(dataSetId);
                 // Number of elements
-                scalar.numElements = int(datasetStorageSize/scalar.dataSize);
+                scalar.numElements = H5Sget_simple_extent_npoints(datasetSpace); 
 
                 // We add this scalar object to the vector of scalar datasets
                 this->scalarDataSets.push_back(scalar);
@@ -650,10 +649,10 @@ void PMDParticle::ScanGroup(hid_t particleGroupId,char * objectName)
     int                 vectorDataSetId[3] = {-1,-1,-1};
     char                datasetName[128];
     ssize_t             length;
-    hsize_t             datasetStorageSize;
     hid_t               groupId;
     hid_t               dataSetId;
     hid_t               datasetType;
+    hid_t               datasetSpace;
     scalarDataSet       scalar;
     vectorDataSet       vector;
     hsize_t             numObjects;
@@ -716,10 +715,8 @@ void PMDParticle::ScanGroup(hid_t particleGroupId,char * objectName)
                   scalar.dataSize = H5Tget_size(datasetType);
                   // data Class
                   scalar.dataClass = H5Tget_class(datasetType);
-                  // Storage size
-                  datasetStorageSize = H5Dget_storage_size(dataSetId);
                   // Number of elements
-                  scalar.numElements = int(datasetStorageSize/scalar.dataSize);
+                  scalar.numElements = H5Sget_simple_extent_npoints(datasetSpace);
 
                   // We add this scalar object to the vector of scalar datasets
                   this->scalarDataSets.push_back(scalar);
@@ -785,7 +782,7 @@ PMDParticle::ScanDataSet(hid_t particleGroupId,char * objectName)
     scalarDataSet       scalar;
     hid_t                dataSetId;
     hid_t                datasetType;
-    hsize_t             datasetStorageSize;
+    hid_t                datasetSpace;
 
       // Openning of the dataset
       dataSetId = H5Dopen2(particleGroupId, objectName , H5P_DEFAULT);
@@ -805,13 +802,12 @@ PMDParticle::ScanDataSet(hid_t particleGroupId,char * objectName)
 
       // data Size
       datasetType = H5Dget_type(dataSetId);
+      datasetSpace = H5Dget_space(dataSetId);
       scalar.dataSize = H5Tget_size(datasetType);
       // data Class
       scalar.dataClass = H5Tget_class(datasetType);
-      // Storage size
-      datasetStorageSize = H5Dget_storage_size(dataSetId);
       // Number of elements
-      scalar.numElements = int(datasetStorageSize/scalar.dataSize);
+      scalar.numElements = H5Sget_simple_extent_npoints(datasetSpace);
 
       // We add this scalar object to the vector of scalar datasets
       this->scalarDataSets.push_back(scalar);

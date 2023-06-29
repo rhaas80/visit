@@ -517,7 +517,7 @@ PMDFile::ReadScalarDataSet(void * array,
     hid_t   datasetId;
     hid_t   datasetType;
     hid_t   datasetSpace;
-    hsize_t datasetStorageSize;
+    hsize_t datasetNumPoints;
 
     // Open the corresponding dataset
     if ((datasetId = H5Dopen(this->fileId,path,H5P_DEFAULT))<0)
@@ -539,8 +539,8 @@ PMDFile::ReadScalarDataSet(void * array,
         datasetType = H5Dget_type(datasetId);
         // Data size
         dataSize = H5Tget_size(datasetType);
-        // Storage size
-        datasetStorageSize = H5Dget_storage_size(datasetId);
+        //number of points from dataset space
+        datasetNumPoints = H5Sget_simple_extent_npoints(datasetSpace);
         // Dimension from the data space
         ndims = H5Sget_simple_extent_ndims(datasetSpace);
 
@@ -549,7 +549,7 @@ PMDFile::ReadScalarDataSet(void * array,
         {
 
             // Correct number of values in the dataset
-            if (numValues == int(datasetStorageSize/dataSize))
+            if (numValues == datasetNumPoints)
             {
 
                 if (H5Dread(datasetId, datasetType, H5S_ALL, H5S_ALL,
@@ -603,13 +603,13 @@ PMDFile::ReadScalarDataSet(void * array,
                 char error[1024];
                 snprintf(error, 1024,
                          "Invalid size for the current dataset (%d %ld)",
-                         numValues,long(datasetStorageSize));
+                         numValues,long(datasetNumPoints));
 
 #ifndef TEST
                 EXCEPTION2(InvalidFilesException, (const char *) path,error);
 #endif
                 debug5 << " Invalid size for the current dataset:" << numValues
-                       << " " << long(datasetStorageSize) << endl;
+                       << " " << long(datasetNumPoints) << endl;
                 return -3;
             }
         }
@@ -669,7 +669,6 @@ PMDFile::ReadFieldScalarBlock(void * array,
     hid_t   datasetId;
     hid_t   datasetType;
     hid_t   datasetSpace;
-    hsize_t datasetStorageSize;
 
     //cerr  << "PMDFile::ReadFieldScalarBlock" << endl;
 
@@ -697,8 +696,6 @@ PMDFile::ReadFieldScalarBlock(void * array,
         datasetType = H5Dget_type(datasetId);
         // Data size
         dataSize = H5Tget_size(datasetType);
-        // Storage size
-        datasetStorageSize = H5Dget_storage_size(datasetId);
         // Dimension from the data space
         ndims = H5Sget_simple_extent_ndims(datasetSpace);
 
@@ -929,7 +926,6 @@ int PMDFile::ReadParticleScalarBlock(void * array,
     hid_t   datasetId;
     hid_t   datasetType;
     hid_t   datasetSpace;
-    hsize_t datasetStorageSize;
 
     //cerr  << "PMDFile::ReadParticleScalarBlock" << endl;
 
@@ -956,8 +952,6 @@ int PMDFile::ReadParticleScalarBlock(void * array,
         datasetType = H5Dget_type(datasetId);
         // Data size
         dataSize = H5Tget_size(datasetType);
-        // Storage size
-        datasetStorageSize = H5Dget_storage_size(datasetId);
         // Dimension from the data space
         ndims  = H5Sget_simple_extent_ndims(datasetSpace);
 

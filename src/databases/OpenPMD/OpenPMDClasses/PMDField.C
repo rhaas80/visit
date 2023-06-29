@@ -212,8 +212,6 @@ void PMDField::SetGridDimensions(hid_t datasetId)
     hid_t dataset_space = H5Dget_space(datasetId);
     // Data type
     hid_t dataset_type  = H5Dget_type(datasetId);
-    // Storage size
-    hsize_t dataset_storage_size = H5Dget_storage_size(datasetId);
     // Dimension from the data space
     hsize_t dims[3];
     hsize_t maxdims[3];
