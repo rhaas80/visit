@@ -46,6 +46,7 @@ class PMDIteration
 	void	ScanParticles(hid_t fileId);
 	void	PrintInfo();
 	bool	HasFieldOfName(char * fieldName);
+	bool	ReadAmrData(hid_t iterationId);
 
 	// Iteration attributes
 	/// Iteration name
@@ -71,6 +72,14 @@ class PMDIteration
 	vector <PMDParticle> particles;
 
 	protected:
+
+	private:
+	typedef struct amrDataStruct {
+		size_t nPatchs; //number of AMR level
+		vector<size_t> nLevels; //number of levels per patch
+		// vector<vector<int*>> chunkInfo; // chunk info per patch per level
+	} amrDataStruct;
+	amrDataStruct amrData;
 
 };
 

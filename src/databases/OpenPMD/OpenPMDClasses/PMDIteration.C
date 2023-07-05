@@ -427,6 +427,42 @@ bool PMDIteration::HasFieldOfName(char * fieldName)
 }
 
 
+//TODO: detect data type from atype
+//		use patchSuffixes and levelSuffixes to not hard code the suffixes
+bool PMDIteration::ReadAmrData(hid_t iterationId) {
+	hid_t atype;
+	hid_t attrId;
+	int64_t val = 0;
+	
+	attrId = H5Aopen_name(iterationId, "numPatches");
+	if (attrId >= 0) {
+		atype  = H5Aget_type(attrId);
+		H5Aread(attrId, atype, &val);
+		amrData.nPatchs = static_cast<size_t>(val);
+	}
+
+	attrId = H5Aopen_name(iterationId, "numLevels_patch00");
+	if (attrId >= 0) {
+		atype  = H5Aget_type(attrId);
+		H5Aread(attrId, atype, &val);
+		amrData.nLevels.push_back(static_cast<size_t>(val));
+	}
+
+	attrId = H5Aopen_name(iterationId, "chunkInfo_patch00_lev00");
+	if (attrId >= 0) {
+		int64_t arrVal[1000]; //TODO: maybe use H5Aget_storage_size?
+							  //	  also I'd like to avoid useing heap if posible
+		atype  = H5Aget_type(attrId);
+		H5Aread(attrId, atype, arrVal);
+		// for (int i = 0; i < 1000; i++) {
+		// 	cout << "i: " << arrVal[i] << "; ";
+		// }
+	}
+
+	return true;
+}
+
+
 // ***************************************************************************
 // Method: PMDIteration::PrintInfo
 //
