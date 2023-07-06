@@ -426,39 +426,94 @@ bool PMDIteration::HasFieldOfName(char * fieldName)
   return false;
 }
 
+template<typename T>
+vector<T> PMDIteration::getAttributeArray(hid_t attrId, hid_t atype) {
+	hid_t attrSpace = H5Aget_space(attrId);
+	ssize_t arraySize = H5Sget_simple_extent_npoints(attrSpace);
+	if (atype == H5T_STRING) {
+		//if it is an array of strings muliply number of strings by string size
+		atype = H5Aget_type(attrId);
+		arraySize *= H5Tget_size(atype);
+	}
+	vector<T> attrArray(arraySize);
+	H5Aread(attrId, atype, attrArray.data());
+	return attrArray;
+}
 
-//TODO: detect data type from atype
-//		use patchSuffixes and levelSuffixes to not hard code the suffixes
+//TODO: maybe different name?
+vector<string> PMDIteration::VectorCharToStr(vector<char> const& charVec,
+											 size_t stringSize) {
+	vector<string> stringVec;
+	for (size_t i = 0; i < charVec.size(); i += stringSize) {
+		stringVec.push_back(
+			string(begin(charVec) + i, begin(charVec) + i + stringSize));
+	}
+	return stringVec;
+}
+
+//TODO: do something other than the "cout and return false" when encountering errors
+//TODO: maybe move a lot of this into their own functions
 bool PMDIteration::ReadAmrData(hid_t iterationId) {
 	hid_t atype;
 	hid_t attrId;
-	int64_t val = 0;
-	
+
+	//get number of Patches
 	attrId = H5Aopen_name(iterationId, "numPatches");
 	if (attrId >= 0) {
-		atype  = H5Aget_type(attrId);
-		H5Aread(attrId, atype, &val);
+		long val = 0;
+		H5Aread(attrId, H5T_NATIVE_LONG, &val); 
 		amrData.nPatchs = static_cast<size_t>(val);
-	}
+		amrData.chunks.resize(amrData.nPatchs);
+	} else {cout << "not open numPatches"; return false;}
 
-	attrId = H5Aopen_name(iterationId, "numLevels_patch00");
+	//get the suffixes for all the patches
+	vector<string> patchSuffixes;
+	attrId = H5Aopen_name(iterationId, "patchSuffixes");
 	if (attrId >= 0) {
-		atype  = H5Aget_type(attrId);
-		H5Aread(attrId, atype, &val);
-		amrData.nLevels.push_back(static_cast<size_t>(val));
-	}
+		vector<char> charSuffixes = getAttributeArray<char>(attrId, H5T_STRING);
+		size_t stringSize = H5Tget_size(H5Aget_type(attrId));
+		patchSuffixes = VectorCharToStr(charSuffixes, stringSize);
+	} else {cout << "not open patchSuffixes"; return false;}
 
-	attrId = H5Aopen_name(iterationId, "chunkInfo_patch00_lev00");
-	if (attrId >= 0) {
-		int64_t arrVal[1000]; //TODO: maybe use H5Aget_storage_size?
-							  //	  also I'd like to avoid useing heap if posible
-		atype  = H5Aget_type(attrId);
-		H5Aread(attrId, atype, arrVal);
-		// for (int i = 0; i < 1000; i++) {
-		// 	cout << "i: " << arrVal[i] << "; ";
-		// }
-	}
+	auto curPatchSuffix = begin(patchSuffixes);
+	for (vector<vector<chunk_t>>& patch : amrData.chunks) {
+		vector<string> levelSuffixes;
 
+		//get the suffixes for all the levels
+		string levelSuffixName = "levelSuffixes" + *curPatchSuffix;
+		attrId = H5Aopen_name(iterationId, levelSuffixName.c_str());
+		if (attrId >= 0) {
+			vector<char> charSuffixes = 
+				getAttributeArray<char>(attrId, H5T_STRING);
+			size_t stringSize = H5Tget_size(H5Aget_type(attrId));
+			levelSuffixes = VectorCharToStr(charSuffixes, stringSize);
+		} else {cout << "not open levelSuffixes"; return false;}
+
+		//get all the chunk information from all the levels
+		//assuming size of LevelSuffixes_patchxx == numLevels_patchxx
+		for (string const& levelSuffix : levelSuffixes) {
+			vector<chunk_t> chunks;
+			string levelName = "chunkInfo" + levelSuffix;
+			attrId = H5Aopen_name(iterationId, levelName.c_str());
+			if (attrId >= 0) {
+				vector<long> attrArray = getAttributeArray<long>(attrId, H5T_NATIVE_LONG);
+
+				for (auto iter = begin(attrArray); iter != end(attrArray); iter += 6) {
+					chunk_t newChunk;
+					newChunk.lower[0] = iter[0];
+					newChunk.lower[1] = iter[1];
+					newChunk.lower[2] = iter[2];
+					newChunk.upper[0] = iter[3];	
+					newChunk.upper[1] = iter[4];
+					newChunk.upper[2] = iter[5];
+					chunks.push_back(newChunk);
+					// cout << newChunk << endl;
+				}
+			} else {cout << "not open chunkInfo"; return false;}
+			patch.push_back(chunks);
+		}
+		curPatchSuffix++;
+	}
 	return true;
 }
 

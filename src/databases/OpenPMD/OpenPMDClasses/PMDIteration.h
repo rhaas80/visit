@@ -92,6 +92,10 @@ class PMDIteration
 	} amrDataStruct;
 	amrDataStruct amrData;
 
+	template<typename T>
+	vector<T> getAttributeArray(hid_t attrId, hid_t atype);
+	vector<string> VectorCharToStr(vector<char> const& charVec,
+								   size_t stringSize);
 };
 
 inline std::ostream& operator<<(std::ostream& output, PMDIteration::chunk_t const& chunk) {
