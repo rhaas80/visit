@@ -462,8 +462,7 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 	if (attrId >= 0) {
 		long val = 0;
 		H5Aread(attrId, H5T_NATIVE_LONG, &val); 
-		amrData.nPatchs = static_cast<size_t>(val);
-		amrData.chunks.resize(amrData.nPatchs);
+		chunks.resize(static_cast<size_t>(val));
 	} else {cout << "not open numPatches"; return false;}
 
 	//get the suffixes for all the patches
@@ -476,7 +475,7 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 	} else {cout << "not open patchSuffixes"; return false;}
 
 	auto curPatchSuffix = begin(patchSuffixes);
-	for (vector<vector<chunk_t>>& patch : amrData.chunks) {
+	for (vector<vector<chunk_t>>& patch : chunks) {
 		vector<string> levelSuffixes;
 
 		//get the suffixes for all the levels

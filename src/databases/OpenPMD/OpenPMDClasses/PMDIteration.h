@@ -80,17 +80,7 @@ class PMDIteration
 	};
 	friend std::ostream& operator<<(std::ostream& output, PMDIteration::chunk_t const& chunk);
 
-	//TODO: I don't think that we need a struct? all the size information
-	//		nPatches and nLevels is encoded in the chunks vector
-	typedef struct amrDataStruct {
-		//number of AMR level
-		size_t nPatchs;
-		//number of levels per patch
-		vector<size_t> nLevels; 
-		//all chunks for the current interation in order: [patch][level][chunk]
-		vector<vector<vector<chunk_t>>> chunks;
-	} amrDataStruct;
-	amrDataStruct amrData;
+	vector<vector<vector<chunk_t>>> chunks;
 
 	template<typename T>
 	vector<T> getAttributeArray(hid_t attrId, hid_t atype);
