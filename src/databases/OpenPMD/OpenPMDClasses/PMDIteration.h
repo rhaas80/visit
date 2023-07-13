@@ -21,6 +21,11 @@
 
 using namespace std;
 
+struct chunk_t {
+	long lower[3]; //lower end of chunk
+	long upper[3]; //upper end of chunk
+};
+
 // ***************************************************************************
 // Class: PMDIteration
 //
@@ -74,12 +79,6 @@ class PMDIteration
 	protected:
 
 	private:
-	struct chunk_t {
-		long lower[3]; //lower end of chunk
-		long upper[3]; //upper end of chunk
-	};
-	friend std::ostream& operator<<(std::ostream& output, PMDIteration::chunk_t const& chunk);
-
 	vector<vector<vector<chunk_t>>> chunks;
 
 	template<typename T>
@@ -88,7 +87,7 @@ class PMDIteration
 								   size_t stringSize);
 };
 
-inline std::ostream& operator<<(std::ostream& output, PMDIteration::chunk_t const& chunk) {
+inline std::ostream& operator<<(std::ostream& output, chunk_t const& chunk) {
 	output << "lower:" << endl;
 	output << "\t" << chunk.lower[0] << ", " 
 		   		   << chunk.lower[1] << ", "
