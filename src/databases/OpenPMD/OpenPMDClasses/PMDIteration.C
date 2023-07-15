@@ -612,3 +612,29 @@ void PMDIteration::PrintInfo()
 		  }
 	}
 }
+
+// ***************************************************************************
+// Method: PMDIteration::nChunks
+//
+// Purpose:
+//			 This method computes the total numbe of chunks
+//			 over all patches and levels
+//
+// Programmer: Roland Haas
+// Creation:   Fri Jul 14 2023
+//
+// Modifications:
+//
+// ***************************************************************************
+size_t PMDIteration::amrDataStruct::nChunks() const
+{
+	size_t retval = 0;
+
+	for(size_t p = 0; p < this->nPatchs ; ++p) {
+		for(size_t l = 0; l < this->nLevels[p] ; ++l) {
+			retval += this->chunks[p][l].size();
+		}
+	}
+
+	return retval;
+}

@@ -71,9 +71,6 @@ class PMDIteration
 	/// Vector of particle objects
 	vector <PMDParticle> particles;
 
-	protected:
-
-	private:
 	struct chunk_t {
 		long lower[3]; //lower end of chunk
 		long upper[3]; //upper end of chunk
@@ -89,8 +86,13 @@ class PMDIteration
 		vector<size_t> nLevels; 
 		//all chunks for the current interation in order: [patch][level][chunk]
 		vector<vector<vector<chunk_t>>> chunks;
+                size_t nChunks() const;
 	} amrDataStruct;
 	amrDataStruct amrData;
+
+	protected:
+
+        private:
 
 	template<typename T>
 	vector<T> getAttributeArray(hid_t attrId, hid_t atype);

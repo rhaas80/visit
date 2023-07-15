@@ -312,7 +312,7 @@ avtOpenPMDFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md,
         }
 
         // Number of blocks
-        mmd->numBlocks = this->numTasks;
+        mmd->numBlocks = openPMDFile.iterations[timeState].amrData.nChunks();
         // Add mesh
         md->Add(mmd);
 
