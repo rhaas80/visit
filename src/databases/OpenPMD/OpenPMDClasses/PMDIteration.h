@@ -71,6 +71,7 @@ class PMDIteration
 	/// Vector of particle objects
 	vector <PMDParticle> particles;
 
+        // TODO: check if these really are per-iteraion or per field group
 	struct chunk_t {
 		long lower[3]; //lower end of chunk
 		long upper[3]; //upper end of chunk
@@ -86,7 +87,8 @@ class PMDIteration
 		vector<size_t> nLevels; 
 		//all chunks for the current interation in order: [patch][level][chunk]
 		vector<vector<vector<chunk_t>>> chunks;
-                size_t nChunks() const;
+		size_t GetNumChunks(int const level) const;
+		void GetChunkProperties(int const level, int const domain, fieldBlockStruct * const fieldBlock) const;
 	} amrDataStruct;
 	amrDataStruct amrData;
 
