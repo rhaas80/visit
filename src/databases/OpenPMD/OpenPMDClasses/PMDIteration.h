@@ -80,7 +80,7 @@ class PMDIteration
 	protected:
 
 	private:
-	vector<vector<vector<chunk_t>>> chunks;
+	vector<vector<vector<chunk_t>>> patchChunks;
 
 	template<typename T>
 	vector<T> getAttributeArray(hid_t attrId, hid_t atype);
