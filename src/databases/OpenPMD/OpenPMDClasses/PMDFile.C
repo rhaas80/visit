@@ -356,6 +356,8 @@ void PMDFile::ScanIterations()
                 H5Aclose(attrId);
             }
 
+            iteration.ReadAmrData(iterationId);
+
             // Add the iteration in the list of iterations
             iterations.push_back(iteration);
         }
