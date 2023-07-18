@@ -475,6 +475,7 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 	} else {cout << "not open patchSuffixes"; return false;}
 
 	auto curPatchSuffix = begin(patchSuffixes);
+	size_t domainNum = 0;
 	for (vector<vector<chunk_t>>& patch : patchChunks) {
 		vector<string> levelSuffixes;
 
@@ -505,6 +506,8 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 					newChunk.upper[0] = iter[3];	
 					newChunk.upper[1] = iter[4];
 					newChunk.upper[2] = iter[5];
+					newChunk.domainNumber = domainNum;
+					domainNum++;
 					chunks.push_back(newChunk);
 					// cout << newChunk << endl;
 				}
@@ -513,7 +516,43 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 		}
 		curPatchSuffix++;
 	}
+
+	ReadChildList();
+
 	return true;
+}
+
+void PMDIteration::ReadChildList() {
+	for (vector<vector<chunk_t>>& patch : patchChunks) {
+		for (size_t level = 0; level < patch.size() - 1; ++level) {
+			for (chunk_t& chunk : patch[level]) {
+				chunk.childList =
+					FindChildListForChunk(chunk, patch[level + 1]);
+				cout << chunk << endl;
+			}
+		}
+	}
+}
+
+
+//TODO: currently assumes that chunks in "level" are more fine than "chunk"
+vector<size_t> PMDIteration::FindChildListForChunk(const chunk_t& chunk,
+		const vector<chunk_t>& level) const {
+	vector<size_t> childList;
+	for (const chunk_t& levelChunk : level) {
+		bool isInChunk = true;
+		for (size_t side = 0; side < 3; ++side) {
+			if (levelChunk.upper[side] < chunk.lower[side] || 
+					levelChunk.lower[side] > chunk.upper[side]) {
+				isInChunk = false;
+				break;
+			}
+		}
+		if (isInChunk) {
+			childList.push_back(levelChunk.domainNumber);
+		}
+	}
+	return childList;
 }
 
 vector<chunk_t> PMDIteration::getChunk(size_t patchNum, size_t levelNum) const {

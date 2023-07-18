@@ -22,8 +22,10 @@
 using namespace std;
 
 struct chunk_t {
+	size_t domainNumber;
 	long lower[3]; //lower end of chunk
 	long upper[3]; //upper end of chunk
+	vector<size_t> childList;
 };
 
 // ***************************************************************************
@@ -52,7 +54,7 @@ class PMDIteration
 	void	PrintInfo();
 	bool	HasFieldOfName(char * fieldName);
 	bool	ReadAmrData(hid_t iterationId);
-	const vector<chunk_t>& getChunk(size_t patchNum, size_t levelNum) const;
+	vector<chunk_t> getChunk(size_t patchNum, size_t levelNum) const;
 
 	// Iteration attributes
 	/// Iteration name
@@ -86,17 +88,28 @@ class PMDIteration
 	vector<T> getAttributeArray(hid_t attrId, hid_t atype);
 	vector<string> VectorCharToStr(vector<char> const& charVec,
 								   size_t stringSize);
+	
+	// Read in the child list for all chunks
+	void ReadChildList();
+
+	// for a chunk, find all chunks in level that intersect it 
+	vector<size_t> FindChildListForChunk(const chunk_t& chunk,
+										 const vector<chunk_t>& level) const;
 };
 
 inline std::ostream& operator<<(std::ostream& output, chunk_t const& chunk) {
-	output << "lower:" << endl;
-	output << "\t" << chunk.lower[0] << ", " 
-		   		   << chunk.lower[1] << ", "
-				   << chunk.lower[2] << endl;
-	output << "upper:" << endl;
-	output << "\t" << chunk.upper[0] << ", "
-				   << chunk.upper[1] << ", "
-				   << chunk.upper[2];
+	output << "domain Number: " << chunk.domainNumber << endl;
+	output << "lower:" << chunk.lower[0] << ", " 
+		   		   	   << chunk.lower[1] << ", "
+				   	   << chunk.lower[2] << endl;
+	output << "upper:" << chunk.upper[0] << ", "
+				   	   << chunk.upper[1] << ", "
+				   	   << chunk.upper[2] << endl;
+	output << "childList: ";
+	for (const size_t& domain : chunk.childList) {
+		output << domain << ", ";
+	}
+	output << endl;
 	return output;
 }
 
