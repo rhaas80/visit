@@ -52,6 +52,7 @@ class PMDIteration
 	void	PrintInfo();
 	bool	HasFieldOfName(char * fieldName);
 	bool	ReadAmrData(hid_t iterationId);
+	const vector<chunk_t>& getChunk(size_t patchNum, size_t levelNum) const;
 
 	// Iteration attributes
 	/// Iteration name

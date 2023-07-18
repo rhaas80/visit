@@ -516,6 +516,12 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 	return true;
 }
 
+vector<chunk_t> PMDIteration::getChunk(size_t patchNum, size_t levelNum) const {
+	cout << chunks.size() << endl;
+	cout << chunks[patchNum].size() << endl;
+	cout << chunks[patchNum][levelNum].size() << endl;
+	return chunks[patchNum][levelNum];
+}
 
 // ***************************************************************************
 // Method: PMDIteration::PrintInfo
