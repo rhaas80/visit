@@ -25,7 +25,7 @@ struct chunk_t {
 	size_t domainNumber;
 	long lower[3]; //lower end of chunk
 	long upper[3]; //upper end of chunk
-	vector<size_t> childList;
+	vector<int> childList;
 };
 
 // ***************************************************************************
@@ -97,7 +97,7 @@ class PMDIteration
 	void ReadChildList();
 
 	// for a chunk, find all chunks in level that intersect it 
-	vector<size_t> FindChildListForChunk(const chunk_t& chunk,
+	vector<int> FindChildListForChunk(const chunk_t& chunk,
 										 const vector<chunk_t>& level) const;
 };
 

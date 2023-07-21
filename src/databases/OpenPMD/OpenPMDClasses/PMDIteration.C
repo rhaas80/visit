@@ -536,9 +536,9 @@ void PMDIteration::ReadChildList() {
 
 
 //TODO: currently assumes that chunks in "level" are more fine than "chunk"
-vector<size_t> PMDIteration::FindChildListForChunk(const chunk_t& chunk,
+vector<int> PMDIteration::FindChildListForChunk(const chunk_t& chunk,
 		const vector<chunk_t>& level) const {
-	vector<size_t> childList;
+	vector<int> childList;
 	for (const chunk_t& levelChunk : level) {
 		bool isInChunk = true;
 		for (size_t side = 0; side < 3; ++side) {
