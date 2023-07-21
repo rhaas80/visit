@@ -575,6 +575,19 @@ size_t PMDIteration::GetNumChunks(size_t patchNum, size_t levelNum) {
 	return patchChunks[patchNum][levelNum].size();
 }
 
+// total chunks. Could be needlessly long, but we don't expect the 
+// vectors to get large
+size_t PMDIteration::GetNumChunks() {
+	size_t numChunks = 0;
+	for (const vector<vector<chunk_t>>& patch : patchChunks) {
+		for (const vector<chunk_t> level : patch) {
+			numChunks += level.size();
+		}
+	}
+	return numChunks;
+}
+
+
 // ***************************************************************************
 // Method: PMDIteration::PrintInfo
 //

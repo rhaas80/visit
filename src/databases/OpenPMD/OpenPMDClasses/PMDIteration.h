@@ -58,6 +58,7 @@ class PMDIteration
 	size_t  GetNumPatches();
 	size_t  GetNumLevels(size_t patchNum);
 	size_t  GetNumChunks(size_t patchNum, size_t levelNum);
+	size_t  GetNumChunks();
 
 	// Iteration attributes
 	/// Iteration name
