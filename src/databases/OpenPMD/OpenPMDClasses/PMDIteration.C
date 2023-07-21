@@ -562,6 +562,19 @@ vector<chunk_t> PMDIteration::getChunk(size_t patchNum, size_t levelNum) const {
 	return patchChunks[patchNum][levelNum];
 }
 
+size_t PMDIteration::GetNumPatches() {
+	return patchChunks.size();
+}
+
+size_t PMDIteration::GetNumLevels(size_t patchNum) {
+	return patchChunks[patchNum].size();
+}
+
+//number of chunks in a level
+size_t PMDIteration::GetNumChunks(size_t patchNum, size_t levelNum) {
+	return patchChunks[patchNum][levelNum].size();
+}
+
 // ***************************************************************************
 // Method: PMDIteration::PrintInfo
 //
