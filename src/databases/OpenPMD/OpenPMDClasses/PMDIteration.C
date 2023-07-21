@@ -555,29 +555,29 @@ vector<int> PMDIteration::FindChildListForChunk(const chunk_t& chunk,
 	return childList;
 }
 
-vector<chunk_t> PMDIteration::getChunk(size_t patchNum, size_t levelNum) const {
+const vector<chunk_t>& PMDIteration::getChunk(size_t patchNum, size_t levelNum) const {
 	cout << patchChunks.size() << endl;
 	cout << patchChunks[patchNum].size() << endl;
 	cout << patchChunks[patchNum][levelNum].size() << endl;
 	return patchChunks[patchNum][levelNum];
 }
 
-size_t PMDIteration::GetNumPatches() {
+size_t PMDIteration::GetNumPatches() const {
 	return patchChunks.size();
 }
 
-size_t PMDIteration::GetNumLevels(size_t patchNum) {
+size_t PMDIteration::GetNumLevels(size_t patchNum) const {
 	return patchChunks[patchNum].size();
 }
 
 //number of chunks in a level
-size_t PMDIteration::GetNumChunks(size_t patchNum, size_t levelNum) {
+size_t PMDIteration::GetNumChunks(size_t patchNum, size_t levelNum) const {
 	return patchChunks[patchNum][levelNum].size();
 }
 
 // total chunks. Could be needlessly long, but we don't expect the 
 // vectors to get large
-size_t PMDIteration::GetNumChunks() {
+size_t PMDIteration::GetNumChunks() const {
 	size_t numChunks = 0;
 	for (const vector<vector<chunk_t>>& patch : patchChunks) {
 		for (const vector<chunk_t> level : patch) {
