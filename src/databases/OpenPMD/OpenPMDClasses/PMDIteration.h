@@ -60,8 +60,8 @@ class PMDIteration
 	size_t  GetNumLevels(size_t patchNum) const;
 	size_t  GetNumChunks(size_t patchNum, size_t levelNum) const;
 	size_t  GetNumChunks() const;
-  size_t  GetNumChunks(int const level) const;
-  void    GetChunkProperties(int const level, int const domain, fieldBlockStruct * const fieldBlock) const;
+  	// size_t  GetNumChunks(int const level) const;
+  	void    GetChunkProperties(int const level, int const domain, fieldBlockStruct * const fieldBlock) const;
 
 
 
@@ -91,9 +91,9 @@ class PMDIteration
 
 	protected:
 
-  private:
+	private:
 
-  <vector<vector<chunk_t>>> patchChunks;
+    vector<vector<vector<chunk_t>>> patchChunks;
   
 	template<typename T>
 	vector<T> getAttributeArray(hid_t attrId, hid_t atype);

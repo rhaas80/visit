@@ -259,6 +259,7 @@ avtOpenPMDFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md,
     int i;
     string buffer;
     string bufferMeshName;
+    const size_t patch = 0;
 
     // ________________________________________________________
     // FIELDS
@@ -319,7 +320,8 @@ avtOpenPMDFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md,
         int level;
         int num_parsed = sscanf(lev, "_lev%d", &level);
         assert(num_parsed == 1);
-        mmd->numBlocks = openPMDFile.iterations[timeState].amrData.GetNumChunks(level);
+        mmd->numBlocks = 
+            openPMDFile.iterations[timeState].GetNumChunks(patch, level);
         // Add mesh
         md->Add(mmd);
 
@@ -777,7 +779,7 @@ avtOpenPMDFileFormat::GetMesh(int timestate, int domain, const char *meshname)
                         fieldBlockStruct fieldBlock;
 
                         // We get the block properties
-                        openPMDFile.iterations[timestate].amrData.GetChunkProperties(level, domain, &fieldBlock);
+                        openPMDFile.iterations[timestate].GetChunkProperties(level, domain, &fieldBlock);
 
                         debug5    << "fieldBlock.minNode[0]: "
                                 << fieldBlock.minNode[0]
@@ -1800,7 +1802,7 @@ avtOpenPMDFileFormat::GetVar(int timestate, int domain, const char *varname)
                     fieldBlockStruct fieldBlock;
 
                     // We get the block properties
-                    openPMDFile.iterations[timestate].amrData.GetChunkProperties(level, domain, &fieldBlock);
+                    openPMDFile.iterations[timestate].GetChunkProperties(level, domain, &fieldBlock);
 
                     // Number of nodes
                     numValues = fieldBlock.nbTotalNodes;

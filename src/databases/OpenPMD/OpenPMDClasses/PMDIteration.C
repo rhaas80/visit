@@ -699,23 +699,23 @@ void PMDIteration::PrintInfo()
 // Modifications:
 //
 // ***************************************************************************
-size_t PMDIteration::amrDataStruct::GetNumChunks(int level) const
-{
-	const int patch = 0;
-	return this->chunks[patch][level].size();
+// size_t PMDIteration::GetNumChunks(int level) const
+// {
+// 	const int patch = 0;
+// 	return this->patchChunks[patch][level].size();
 
-#if 0
-	size_t retval = 0;
+// #if 0
+// 	size_t retval = 0;
 
-	for(size_t p = 0; p < this->nPatchs ; ++p) {
-		for(size_t l = 0; l < this->nLevels[p] ; ++l) {
-			retval += this->chunks[p][l].size();
-		}
-	}
+// 	for(size_t p = 0; p < this->nPatchs ; ++p) {
+// 		for(size_t l = 0; l < this->nLevels[p] ; ++l) {
+// 			retval += this->patchChunks[p][l].size();
+// 		}
+// 	}
 
-	return retval;
-#endif
-}
+// 	return retval;
+// #endif
+// }
 
 // ***************************************************************************
 // Method: PMDIteration:Get:ChunkPropoerties
@@ -731,17 +731,17 @@ size_t PMDIteration::amrDataStruct::GetNumChunks(int level) const
 // Modifications:
 //
 // ***************************************************************************
-void PMDIteration::amrDataStruct::GetChunkProperties(int const level, int const chunknum, fieldBlockStruct * const fieldBlock) const
+void PMDIteration::GetChunkProperties(int const level, int const chunknum, fieldBlockStruct * const fieldBlock) const
 {
-        assert(chunknum >= 0 && chunknum < GetNumChunks(level));
+		const size_t patch = 0;	
+        assert(chunknum >= 0 && chunknum < GetNumChunks(patch, level));
 
-        const int patch = 0;
-        const chunk_t& chunk(this->chunks[patch][level][chunknum]);
-	// TDOO: do not hard-code dimenstion
-	fieldBlock->ndims = 3; // hard coded for now`
-	fieldBlock->nbNodes[0] = chunk.upper[0] - chunk.lower[0];
-	fieldBlock->nbNodes[1] = chunk.upper[1] - chunk.lower[1];
-	fieldBlock->nbNodes[2] = chunk.upper[2] - chunk.lower[2];
+        const chunk_t& chunk(this->patchChunks[patch][level][chunknum]);
+		// TDOO: do not hard-code dimenstion
+		fieldBlock->ndims = 3; // hard coded for now`
+		fieldBlock->nbNodes[0] = chunk.upper[0] - chunk.lower[0];
+		fieldBlock->nbNodes[1] = chunk.upper[1] - chunk.lower[1];
+		fieldBlock->nbNodes[2] = chunk.upper[2] - chunk.lower[2];
 
         fieldBlock->minNode[0] = chunk.lower[0];
         fieldBlock->minNode[1] = chunk.lower[1];
