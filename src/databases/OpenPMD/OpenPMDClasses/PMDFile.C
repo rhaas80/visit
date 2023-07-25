@@ -356,6 +356,8 @@ void PMDFile::ScanIterations()
                 H5Aclose(attrId);
             }
 
+            iteration.ReadAmrData(iterationId);
+
             // Add the iteration in the list of iterations
             iterations.push_back(iteration);
         }
@@ -1067,4 +1069,267 @@ int PMDFile::ReadParticleScalarBlock(void * array,
 
     return 0;
 
+}
+
+// ***************************************************************************
+// Method: PMDFile::ReadFieldScalarBlock
+//
+// Purpose
+//      This method reads a block of data from a field dataset specified
+//      by fieldBlock.
+//
+// Programmer: Mathieu Lobet
+// Creation:   Mon Nov 14 2016
+//
+// Arguments:
+//      array output array
+//      factor multiply factor
+//      dataSetClass Dataset type (H5T_FLOAT...)
+//      ieldBlock field block properties
+//
+// Returns:  <0 on failure, 0 on success.
+//
+// Modifications:
+//      Mathieu Lobet, Tue Dec 13 2016
+//      I added the parallel reading of 2D datasets.
+//      I added double dataset and double multiplication factor.
+//
+// ***************************************************************************
+int
+PMDFile::ReadFieldScalarChunk(void * array,
+                              void * factor,
+                              H5T_class_t fieldDataClass,
+                              PMDField const * const field,
+                              int const level,
+                              fieldBlockStruct const * const fieldBlock)
+{
+    int     ndims;
+    int     err;
+    int     dataSize;
+    hid_t   datasetId;
+    hid_t   datasetType;
+    hid_t   datasetSpace;
+
+    //cerr  << "PMDFile::ReadFieldScalarBlock" << endl;
+
+    // Open the corresponding dataset
+    if ((datasetId = H5Dopen(this->fileId,field->datasetPath,
+        H5P_DEFAULT))<0)
+    {
+        char error[1024];
+        snprintf(error, 1024, "Problem when opening the dataset %d",
+                 int(datasetId));
+#ifndef TEST
+        EXCEPTION2(InvalidFilesException, (const char *)
+                   fieldBlock->dataSetPath,error);
+#endif
+        debug5 << " Problem when opening the dataset: "
+               << fieldBlock->dataSetPath << endl;
+        return -1;
+    }
+    else
+    {
+
+        // Data space
+        datasetSpace = H5Dget_space(datasetId);
+        // Data type
+        datasetType = H5Dget_type(datasetId);
+        // Data size
+        dataSize = H5Tget_size(datasetType);
+        // Dimension from the data space
+        ndims = H5Sget_simple_extent_ndims(datasetSpace);
+
+        // Check the class of the dataset
+        if (fieldDataClass == H5T_FLOAT)
+        {
+
+            // ___ Read the dataset __________________________________________
+            // 3D dataset
+            if (ndims==3)
+            {
+
+                // Parameters for the hyperslab
+                hsize_t start[3];
+                hsize_t block[3];
+                hsize_t stride[3];
+                hsize_t count[3];
+                hid_t   memspace;
+
+                // Fill the parameters for the hyperslab
+                // using the fieldBlock properties
+                start[0]  = fieldBlock->minNode[0];
+                start[1]  = fieldBlock->minNode[1];
+                start[2]  = fieldBlock->minNode[2];
+                block[0]  = 1;
+                block[1]  = 1;
+                block[2]  = 1;
+                stride[0] = 1;
+                stride[1] = 1;
+                stride[2] = 1;
+                count[0]  = fieldBlock->nbNodes[0];
+                count[1]  = fieldBlock->nbNodes[1];
+                count[2]  = fieldBlock->nbNodes[2];
+
+                //Define hyperslab in the dataset.
+                err = H5Sselect_hyperslab(datasetSpace, H5S_SELECT_SET,
+                                          start, stride, count, block);
+
+                if (err!=0)
+                {
+                    debug5 << " Problem when defining "
+                    " the hyperslab in the dataset" << endl;
+                    return -3;
+                }
+
+                // Create memory dataspace.
+                // Dimension sizes of the dataset in memory when we read
+                // selection from the dataset on the disk
+                hsize_t mdim[] = {static_cast<hsize_t>(fieldBlock->nbNodes[0]),
+                                  static_cast<hsize_t>(fieldBlock->nbNodes[1]),
+                                  static_cast<hsize_t>(fieldBlock->nbNodes[2])};
+
+                // Define the memory dataspace.
+                memspace = H5Screate_simple (fieldBlock->ndims, mdim, NULL);
+                // TODO: plug HDF5 object leaks
+
+                start[0] = 0;   start[1] = 0;   start[2] = 0;
+                block[0] = 1;   block[1] = 1;   block[2] = 1;
+                stride[0] = 1;  stride[1] = 1;  stride[2] = 1;
+                count[0]  = fieldBlock->nbNodes[0];
+                count[1]  = fieldBlock->nbNodes[1];
+                count[2] = fieldBlock->nbNodes[2];
+
+                // Define memory hyperslab.
+                err = H5Sselect_hyperslab (memspace, H5S_SELECT_SET,
+                                           start, stride, count, block);
+
+                if (H5Dread(datasetId, datasetType, memspace, datasetSpace,
+                    H5P_DEFAULT, array) < 0)
+                {
+#ifndef TEST
+                    EXCEPTION1(InvalidVariableException,
+                               fieldBlock->dataSetPath);
+#endif
+                    debug5 << " Problem when reading the dataset: "
+                           << fieldBlock->dataSetPath << endl;
+                    return -4;
+                }
+            }
+            // 2D Dataset
+            else if (ndims==2)
+            {
+
+                // Parameters for the hyperslab
+                hsize_t start[2];
+                hsize_t block[2];
+                hsize_t stride[2];
+                hsize_t count[2];
+                hid_t   memspace;
+
+                // Fill the parameters for the hyperslab
+                // using the fieldBlock properties
+                start[0] = fieldBlock->minNode[0];
+                start[1] = fieldBlock->minNode[1];
+                block[0] = 1;   block[1] = 1;
+                stride[0] = 1;  stride[1] = 1;
+                count[0]  = fieldBlock->nbNodes[0];
+                count[1]  = fieldBlock->nbNodes[1];
+
+                //Define hyperslab in the dataset.
+                err = H5Sselect_hyperslab(datasetSpace, H5S_SELECT_SET,
+                                          start, stride, count, block);
+
+                if (err!=0)
+                {
+                    debug5 << " Problem when defining the "
+                              "hyperslab in the dataset" << endl;
+                    return -3;
+                }
+
+                // Create memory dataspace.
+                // Dimension sizes of the dataset in memory when
+                // we read selection from the dataset on the disk
+                hsize_t mdim[] = { static_cast<hsize_t>(fieldBlock->nbNodes[0]),
+                                   static_cast<hsize_t>(fieldBlock->nbNodes[1])};
+
+                // Define the memory dataspace.
+                memspace = H5Screate_simple(fieldBlock->ndims, mdim, NULL);
+                // TODO: plug HDF5 object leaks
+
+                start[0] = 0;
+                start[1] = 0;
+                block[0] = 1;
+                block[1] = 1;
+                stride[0] = 1;
+                stride[1] = 1;
+                count[0]  = fieldBlock->nbNodes[0];
+                count[1]  = fieldBlock->nbNodes[1];
+
+                // Define memory hyperslab.
+                err = H5Sselect_hyperslab (memspace, H5S_SELECT_SET,
+                                           start, stride, count, block);
+
+                // Reading of the dataset
+                if (H5Dread(datasetId, datasetType, memspace,
+                            datasetSpace, H5P_DEFAULT, array) < 0)
+                {
+#ifndef TEST
+                    EXCEPTION1(InvalidVariableException,
+                               fieldBlock->dataSetPath);
+#endif
+                    debug5 << " Problem when reading the dataset: "
+                           << fieldBlock->dataSetPath
+                           << endl;
+                    return -4;
+                }
+            }
+
+            // ___ Application of the factor to the data _____________________
+
+            if (dataSize == 4)
+            {
+                float factorTmp = *(float*) (factor);
+                if (factorTmp != 1)
+                {
+                    float * arrayTmp = (float*) (array);
+                    for (int i=0;i<fieldBlock->nbTotalNodes;i++)
+                    {
+                        arrayTmp[i] *= factorTmp;
+                    }
+                }
+            }
+            else if (dataSize == 8)
+            {
+                // factor is still a float
+                float factorTmp = *(float*) (factor);
+                if (factorTmp != 1)
+                {
+                    double * arrayTmp = (double*) (array);
+                    for (int i=0;i<fieldBlock->nbTotalNodes;i++)
+                    {
+                        arrayTmp[i] *= factorTmp;
+                    }
+                }
+            }
+
+        }
+        else
+        {
+#ifndef TEST
+            EXCEPTION2(InvalidFilesException,
+                       (const char *) fieldBlock->dataSetPath,
+                       "The current dataset is not of a valid class.");
+#endif
+            debug5 << "The current dataset, " << fieldBlock->dataSetPath
+                   << ", is not a valid class: " << fieldDataClass << endl;
+            return -2;
+        }
+
+        H5Dclose(datasetId);
+        H5Sclose(datasetSpace);
+        H5Tclose(datasetType);
+
+    }
+    //cerr << " End ReadFieldScalarBlock" << endl;
+        return 0;
 }

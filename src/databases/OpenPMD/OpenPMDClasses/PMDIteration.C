@@ -17,6 +17,7 @@
 #include "PMDIteration.h"
 
 #include <DebugStream.h>
+#include <cassert>
 
 vector <PMDIteration> iterations;
 
@@ -681,4 +682,77 @@ void PMDIteration::PrintInfo()
 					 << endl;
 		  }
 	}
+}
+
+// ***************************************************************************
+// Method: PMDIteration:GetNum:Chunks
+//
+// Purpose:
+//			 This method computes the total numbe of chunks
+//			 over all patches and levels
+// Inputs:
+// level: refinement level (assuming patch 0)
+//
+// Programmer: Roland Haas
+// Creation:   Fri Jul 14 2023
+//
+// Modifications:
+//
+// ***************************************************************************
+size_t PMDIteration::amrDataStruct::GetNumChunks(int level) const
+{
+	const int patch = 0;
+	return this->chunks[patch][level].size();
+
+#if 0
+	size_t retval = 0;
+
+	for(size_t p = 0; p < this->nPatchs ; ++p) {
+		for(size_t l = 0; l < this->nLevels[p] ; ++l) {
+			retval += this->chunks[p][l].size();
+		}
+	}
+
+	return retval;
+#endif
+}
+
+// ***************************************************************************
+// Method: PMDIteration:Get:ChunkPropoerties
+//
+// Purpose:
+//			 This method returns the extents of a chunk
+// Inputs:
+// level: refinement level (assuming patch 0)
+//
+// Programmer: Roland Haas
+// Creation:   Fri Jul 14 2023
+//
+// Modifications:
+//
+// ***************************************************************************
+void PMDIteration::amrDataStruct::GetChunkProperties(int const level, int const chunknum, fieldBlockStruct * const fieldBlock) const
+{
+        assert(chunknum >= 0 && chunknum < GetNumChunks(level));
+
+        const int patch = 0;
+        const chunk_t& chunk(this->chunks[patch][level][chunknum]);
+	// TDOO: do not hard-code dimenstion
+	fieldBlock->ndims = 3; // hard coded for now`
+	fieldBlock->nbNodes[0] = chunk.upper[0] - chunk.lower[0];
+	fieldBlock->nbNodes[1] = chunk.upper[1] - chunk.lower[1];
+	fieldBlock->nbNodes[2] = chunk.upper[2] - chunk.lower[2];
+
+        fieldBlock->minNode[0] = chunk.lower[0];
+        fieldBlock->minNode[1] = chunk.lower[1];
+        fieldBlock->minNode[2] = chunk.lower[2];
+
+        fieldBlock->maxNode[0] = chunk.upper[0] - 1;
+        fieldBlock->maxNode[1] = chunk.upper[1] - 1;
+        fieldBlock->maxNode[2] = chunk.upper[2] - 1;
+
+        fieldBlock->nbTotalNodes = fieldBlock->nbNodes[0] * fieldBlock->nbNodes[1] * fieldBlock->nbNodes[2];
+
+        // TODO: do not just use a dummy string
+        strncpy(fieldBlock->dataSetPath, "<DONOTUSE>", sizeof(fieldBlock->dataSetPath));
 }

@@ -60,6 +60,10 @@ class PMDIteration
 	size_t  GetNumLevels(size_t patchNum) const;
 	size_t  GetNumChunks(size_t patchNum, size_t levelNum) const;
 	size_t  GetNumChunks() const;
+  size_t  GetNumChunks(int const level) const;
+  void    GetChunkProperties(int const level, int const domain, fieldBlockStruct * const fieldBlock) const;
+
+
 
 	// Iteration attributes
 	/// Iteration name
@@ -84,11 +88,13 @@ class PMDIteration
 	/// Vector of particle objects
 	vector <PMDParticle> particles;
 
+
 	protected:
 
-	private:
-	vector<vector<vector<chunk_t>>> patchChunks;
+  private:
 
+  <vector<vector<chunk_t>>> patchChunks;
+  
 	template<typename T>
 	vector<T> getAttributeArray(hid_t attrId, hid_t atype);
 	vector<string> VectorCharToStr(vector<char> const& charVec,

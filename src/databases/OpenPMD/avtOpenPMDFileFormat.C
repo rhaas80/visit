@@ -313,7 +313,13 @@ avtOpenPMDFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md,
         }
 
         // Number of blocks
-        mmd->numBlocks = this->numTasks;
+        // TODO: get rid of this once we actually support AMR
+        const char* lev = strstr(field->name, "_lev");
+        assert(lev != NULL);
+        int level;
+        int num_parsed = sscanf(lev, "_lev%d", &level);
+        assert(num_parsed == 1);
+        mmd->numBlocks = openPMDFile.iterations[timeState].amrData.GetNumChunks(level);
         // Add mesh
         md->Add(mmd);
 
@@ -758,7 +764,80 @@ avtOpenPMDFileFormat::GetMesh(int timestate, int domain, const char *meshname)
                     }
 
                     // Treatment of the file in parallel
-                    if (this->parallel)
+                    if (true)
+                    {
+                        // TODO: get rid of this once we actually support AMR
+                        const char* lev = strstr(field->name, "_lev");
+                        assert(lev != NULL);
+                        int level;
+                        int num_parsed = sscanf(lev, "_lev%d", &level);
+                        assert(num_parsed == 1);
+
+                        // Structure to store the block properties
+                        fieldBlockStruct fieldBlock;
+
+                        // We get the block properties
+                        openPMDFile.iterations[timestate].amrData.GetChunkProperties(level, domain, &fieldBlock);
+
+                        debug5    << "fieldBlock.minNode[0]: "
+                                << fieldBlock.minNode[0]
+                                << " " << fieldBlock.nbNodes[0]
+                                << " " << fieldBlock.maxNode[0] << endl;
+
+                        debug5    << "fieldBlock.minNode[1]: "
+                                << fieldBlock.minNode[1]
+                                << " " << fieldBlock.nbNodes[1]
+                                << " " << fieldBlock.maxNode[1] << endl;
+
+                        debug5    << "fieldBlock.minNode[2]: "
+                                << fieldBlock.minNode[2]
+                                << " " << fieldBlock.nbNodes[2]
+                                << " " << fieldBlock.maxNode[2] << endl;
+
+                        // Dimensions
+                        // TODO: check if Ashley's code already did the reordering
+                        dims[0] = fieldBlock.nbNodes[i0];
+                        dims[1] = fieldBlock.nbNodes[1];
+                        dims[2] = fieldBlock.nbNodes[i2];
+
+                        // Read the X coordinates from the file.
+                        coords[0] = vtkFloatArray::New();
+                        coords[0]->SetNumberOfTuples(dims[0]);
+                        float *xarray = (float *)coords[0]->GetVoidPointer(0);
+                        for(i=fieldBlock.minNode[i0];
+                            i<=fieldBlock.maxNode[i0];i++)
+                        {
+                            // TODO: check how OpenPMD stores refined grid spacings (if at all)
+                            xarray[i - fieldBlock.minNode[i0]] =
+                            ((i+field->gridPosition[i0])*field->gridSpacing[i0]
+                            + field->gridGlobalOffset[i0])*field->gridUnitSI;
+                        }
+
+                        // Read the Y coordinates from the file.
+                        coords[1] = vtkFloatArray::New();
+                        coords[1]->SetNumberOfTuples(dims[1]);
+                        float *yarray = (float *)coords[1]->GetVoidPointer(0);
+                        for(i=fieldBlock.minNode[1];
+                            i<=fieldBlock.maxNode[1];i++)
+                        {
+                            yarray[i - fieldBlock.minNode[1]] =
+                            ((i+field->gridPosition[1])*field->gridSpacing[1]
+                            + field->gridGlobalOffset[1])*field->gridUnitSI;
+                        }
+
+                        // Read the Z coordinates from the file.
+                        coords[2] = vtkFloatArray::New();
+                        coords[2]->SetNumberOfTuples(dims[2]);
+                        float *zarray = (float *)coords[2]->GetVoidPointer(0);
+                        for(i=fieldBlock.minNode[i2];
+                            i<=fieldBlock.maxNode[i2];i++)
+                        {
+                            zarray[i - fieldBlock.minNode[i2]] =
+                            ((i+field->gridPosition[i2])*field->gridSpacing[i2]
+                            + field->gridGlobalOffset[i2])*field->gridUnitSI;
+                        }
+                    }
+                    else if (this->parallel)
                     {
 
                         // Structure to store the block properties
@@ -1708,7 +1787,82 @@ avtOpenPMDFileFormat::GetVar(int timestate, int domain, const char *varname)
 
                 // We treat the file in parallel by reading
                 // the scalar dataset by block
-                if (parallel)
+                if (true)
+                {
+                    // TODO: get rid of this once we actually support AMR
+                    const char* lev = strstr(field->name, "_lev");
+                    assert(lev != NULL);
+                    int level;
+                    int num_parsed = sscanf(lev, "_lev%d", &level);
+                    assert(num_parsed == 1);
+
+                    // Structure to store the block properties
+                    fieldBlockStruct fieldBlock;
+
+                    // We get the block properties
+                    openPMDFile.iterations[timestate].amrData.GetChunkProperties(level, domain, &fieldBlock);
+
+                    // Number of nodes
+                    numValues = fieldBlock.nbTotalNodes;
+
+                    // Factor for SI units
+                    factor = field->unitSI;
+
+                    // Float simple precision
+                    // TODO: don't assume sizeof(float) == 4...
+                    if (field->dataSize == 4)
+                    {
+                        // Allocate the return vtkFloatArray object
+                        vtkFloatArray * vtkArray = vtkFloatArray::New();
+                        vtkArray->SetNumberOfTuples(numValues);
+                        float *data = (float *)vtkArray->GetVoidPointer(0);
+                        // Reading of the dataset block
+                        err = openPMDFile.ReadFieldScalarChunk(data,
+                                                            &factor,
+                                                            field->dataClass,
+                                                            &*field,
+                                                            level,
+                                                            &fieldBlock);
+
+                        // If no error, we return the array
+                        if (err>=0)
+                        {
+                            return vtkArray;
+                        }
+                        // TODO: plug memory leak
+
+                    }
+                    // Float double precision
+                    // TODO: don't assume sizeof(double) == 4...
+                    else if (field->dataSize == 8)
+                    {
+                        // Allocate the return vtkDoubleArray object
+                        vtkDoubleArray * vtkArray = vtkDoubleArray::New();
+                        vtkArray->SetNumberOfTuples(numValues);
+                        double *data = (double *)vtkArray->GetVoidPointer(0);
+                        // Reading of the dataset block
+                        err = openPMDFile.ReadFieldScalarChunk(data,
+                                                            &factor,
+                                                            field->dataClass,
+                                                            &*field,
+                                                            level,
+                                                            &fieldBlock);
+
+                        // If no error, we return the array
+                        if (err>=0)
+                        {
+                            return vtkArray;
+                        }
+                        // TODO: plug memory leak
+
+                    }
+                    else
+                    {
+                        debug5 << " Error in avtOpenPMDFileFormat::GetVar" << endl;
+                        debug5 << " The data size is not recognized." << endl;
+                    }
+                }
+                else if (parallel)
                 {
 
                     // Structure to store the block properties
