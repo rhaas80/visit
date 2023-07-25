@@ -64,6 +64,7 @@ class avtOpenPMDFileFormat : public avtMTMDFileFormat
     virtual vtkDataSet    *GetMesh(int, int, const char *);
     virtual vtkDataArray  *GetVar(int, int, const char *);
     virtual vtkDataArray  *GetVectorVar(int, int, const char *);
+    virtual void           BuildDomainAuxiliaryInfo(int timeState) const;
 
   protected:
     // DATA MEMBERS

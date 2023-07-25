@@ -29,6 +29,7 @@
 #include <vtkVertex.h>
 
 #include <avtDatabaseMetaData.h>
+#include <avtStructuredDomainNesting.h>
 
 #include <Expression.h>
 #include <DebugStream.h>
@@ -3111,4 +3112,58 @@ avtOpenPMDFileFormat::GetVectorVar(int timestate,
     // delete [] one_entry;
     // return rv;
     //
+}
+
+void avtOpenPMDFileFormat::BuildDomainAuxiliaryInfo(int timeState) const {
+    //TODO: carpet code has this, but I am not sure what it is for
+    #ifdef MDSERVER
+        return;
+    #endif
+
+    const PMDIteration& iteration = openPMDFile.iterations[timeState];
+        
+    //TODO: don't assume the following numbers?
+    size_t patchNum = 0;
+    size_t numDims = 3;
+    
+    size_t numLevels = iteration.GetNumLevels(patchNum);
+    size_t numChunks = iteration.GetNumChunks();
+    
+    // build the avtDomainNesting object
+    avtStructuredDomainNesting *dn = 
+        new avtStructuredDomainNesting(numLevels, numChunks);
+
+    dn->SetNumDimensions(numDims);
+
+    // Set refinement level ratio information
+    // We hardcode this to 2:1 ratio for each direction!
+    vector<int> ratios(3,1);
+    dn->SetLevelRefinementRatios(0, ratios);
+    for (int i = 1; i < numLevels; i++)
+    {
+        ratios[0] = 2;
+        ratios[1] = 2;
+        ratios[2] = 2;
+        dn->SetLevelRefinementRatios(i, ratios);
+    }
+
+    for (size_t level = 0; level < numLevels; ++level) {
+        vector<chunk_t> chunks = iteration.getChunk(patchNum, level);
+        for (const chunk_t& chunk : chunks) {
+            vector<int> extents(begin(chunk.lower), end(chunk.lower));
+            extents.insert(end(extents), begin(chunk.upper), end(chunk.upper));
+
+            dn->SetNestingForDomain(chunk.domainNumber,
+                                    level,
+                                    chunk.childList,
+                                    extents);
+        }
+    }
+
+    //TODO: carpet code has this at the end. I don't think that this is needed
+    //      here, but I figured I would put this here just in case
+    // void_ref_ptr vr = void_ref_ptr(dn, avtStructuredDomainNesting::Destruct);
+
+    // cache->CacheVoidRef("any_mesh", AUXILIARY_DATA_DOMAIN_NESTING_INFORMATION,
+    //     timeState, -1, vr); 
 }

@@ -463,8 +463,7 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 	if (attrId >= 0) {
 		long val = 0;
 		H5Aread(attrId, H5T_NATIVE_LONG, &val); 
-		amrData.nPatchs = static_cast<size_t>(val);
-		amrData.chunks.resize(amrData.nPatchs);
+		patchChunks.resize(static_cast<size_t>(val));
 	} else {cout << "not open numPatches"; return false;}
 
 	//get the suffixes for all the patches
@@ -477,7 +476,8 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 	} else {cout << "not open patchSuffixes"; return false;}
 
 	auto curPatchSuffix = begin(patchSuffixes);
-	for (vector<vector<chunk_t>>& patch : amrData.chunks) {
+	size_t domainNum = 0;
+	for (vector<vector<chunk_t>>& patch : patchChunks) {
 		vector<string> levelSuffixes;
 
 		//get the suffixes for all the levels
@@ -507,6 +507,8 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 					newChunk.upper[0] = iter[3];	
 					newChunk.upper[1] = iter[4];
 					newChunk.upper[2] = iter[5];
+					newChunk.domainNumber = domainNum;
+					domainNum++;
 					chunks.push_back(newChunk);
 					// cout << newChunk << endl;
 				}
@@ -515,7 +517,75 @@ bool PMDIteration::ReadAmrData(hid_t iterationId) {
 		}
 		curPatchSuffix++;
 	}
+
+	ReadChildList();
+
 	return true;
+}
+
+void PMDIteration::ReadChildList() {
+	for (vector<vector<chunk_t>>& patch : patchChunks) {
+		for (size_t level = 0; level < patch.size() - 1; ++level) {
+			for (chunk_t& chunk : patch[level]) {
+				chunk.childList =
+					FindChildListForChunk(chunk, patch[level + 1]);
+				cout << chunk << endl;
+			}
+		}
+	}
+}
+
+
+//TODO: currently assumes that chunks in "level" are more fine than "chunk"
+vector<int> PMDIteration::FindChildListForChunk(const chunk_t& chunk,
+		const vector<chunk_t>& level) const {
+	vector<int> childList;
+	for (const chunk_t& levelChunk : level) {
+		bool isInChunk = true;
+		for (size_t side = 0; side < 3; ++side) {
+			if (levelChunk.upper[side] < chunk.lower[side] || 
+					levelChunk.lower[side] > chunk.upper[side]) {
+				isInChunk = false;
+				break;
+			}
+		}
+		if (isInChunk) {
+			childList.push_back(levelChunk.domainNumber);
+		}
+	}
+	return childList;
+}
+
+const vector<chunk_t>& PMDIteration::getChunk(size_t patchNum, size_t levelNum) const {
+	cout << patchChunks.size() << endl;
+	cout << patchChunks[patchNum].size() << endl;
+	cout << patchChunks[patchNum][levelNum].size() << endl;
+	return patchChunks[patchNum][levelNum];
+}
+
+size_t PMDIteration::GetNumPatches() const {
+	return patchChunks.size();
+}
+
+size_t PMDIteration::GetNumLevels(size_t patchNum) const {
+	return patchChunks[patchNum].size();
+}
+
+//number of chunks in a level
+size_t PMDIteration::GetNumChunks(size_t patchNum, size_t levelNum) const {
+	return patchChunks[patchNum][levelNum].size();
+}
+
+// total chunks. Could be needlessly long, but we don't expect the 
+// vectors to get large
+size_t PMDIteration::GetNumChunks() const {
+	size_t numChunks = 0;
+	for (const vector<vector<chunk_t>>& patch : patchChunks) {
+		for (const vector<chunk_t> level : patch) {
+			numChunks += level.size();
+		}
+	}
+	return numChunks;
 }
 
 

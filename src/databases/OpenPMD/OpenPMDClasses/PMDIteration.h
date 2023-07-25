@@ -21,6 +21,13 @@
 
 using namespace std;
 
+struct chunk_t {
+	size_t domainNumber;
+	long lower[3]; //lower end of chunk
+	long upper[3]; //upper end of chunk
+	vector<int> childList;
+};
+
 // ***************************************************************************
 // Class: PMDIteration
 //
@@ -48,6 +55,16 @@ class PMDIteration
 	bool	HasFieldOfName(char * fieldName);
 	bool	ReadAmrData(hid_t iterationId);
 
+	const vector<chunk_t>& getChunk(size_t patchNum, size_t levelNum) const;
+	size_t  GetNumPatches() const;
+	size_t  GetNumLevels(size_t patchNum) const;
+	size_t  GetNumChunks(size_t patchNum, size_t levelNum) const;
+	size_t  GetNumChunks() const;
+  size_t  GetNumChunks(int const level) const;
+  void    GetChunkProperties(int const level, int const domain, fieldBlockStruct * const fieldBlock) const;
+
+
+
 	// Iteration attributes
 	/// Iteration name
 	string	name;
@@ -71,46 +88,39 @@ class PMDIteration
 	/// Vector of particle objects
 	vector <PMDParticle> particles;
 
-        // TODO: check if these really are per-iteraion or per field group
-	struct chunk_t {
-		long lower[3]; //lower end of chunk
-		long upper[3]; //upper end of chunk
-	};
-	friend std::ostream& operator<<(std::ostream& output, PMDIteration::chunk_t const& chunk);
-
-	//TODO: I don't think that we need a struct? all the size information
-	//		nPatches and nLevels is encoded in the chunks vector
-	typedef struct amrDataStruct {
-		//number of AMR level
-		size_t nPatchs;
-		//number of levels per patch
-		vector<size_t> nLevels; 
-		//all chunks for the current interation in order: [patch][level][chunk]
-		vector<vector<vector<chunk_t>>> chunks;
-		size_t GetNumChunks(int const level) const;
-		void GetChunkProperties(int const level, int const domain, fieldBlockStruct * const fieldBlock) const;
-	} amrDataStruct;
-	amrDataStruct amrData;
 
 	protected:
 
-        private:
+  private:
 
+  <vector<vector<chunk_t>>> patchChunks;
+  
 	template<typename T>
 	vector<T> getAttributeArray(hid_t attrId, hid_t atype);
 	vector<string> VectorCharToStr(vector<char> const& charVec,
 								   size_t stringSize);
+	
+	// Read in the child list for all chunks
+	void ReadChildList();
+
+	// for a chunk, find all chunks in level that intersect it 
+	vector<int> FindChildListForChunk(const chunk_t& chunk,
+										 const vector<chunk_t>& level) const;
 };
 
-inline std::ostream& operator<<(std::ostream& output, PMDIteration::chunk_t const& chunk) {
-	output << "lower:" << endl;
-	output << "\t" << chunk.lower[0] << ", " 
-		   		   << chunk.lower[1] << ", "
-				   << chunk.lower[2] << endl;
-	output << "upper:" << endl;
-	output << "\t" << chunk.upper[0] << ", "
-				   << chunk.upper[1] << ", "
-				   << chunk.upper[2];
+inline std::ostream& operator<<(std::ostream& output, chunk_t const& chunk) {
+	output << "domain Number: " << chunk.domainNumber << endl;
+	output << "lower:" << chunk.lower[0] << ", " 
+		   		   	   << chunk.lower[1] << ", "
+				   	   << chunk.lower[2] << endl;
+	output << "upper:" << chunk.upper[0] << ", "
+				   	   << chunk.upper[1] << ", "
+				   	   << chunk.upper[2] << endl;
+	output << "childList: ";
+	for (const size_t& domain : chunk.childList) {
+		output << domain << ", ";
+	}
+	output << endl;
 	return output;
 }
 
