@@ -84,7 +84,6 @@ class PMDFile
 		                                void * factor,
 		                                H5T_class_t fieldDataClass,
                                                 PMDField const * const field,
-                                                int const level,
 		                                fieldBlockStruct const * const fieldBlock);
 		int                     ReadParticleScalarBlock(void * array,
 		                                                void * factor,

@@ -259,7 +259,7 @@ avtOpenPMDFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md,
     int i;
     string buffer;
     string bufferMeshName;
-    const size_t patch = 0;
+    const size_t patchNum = 0;
 
     // ________________________________________________________
     // FIELDS
@@ -314,14 +314,8 @@ avtOpenPMDFileFormat::PopulateDatabaseMetaData(avtDatabaseMetaData *md,
         }
 
         // Number of blocks
-        // TODO: get rid of this once we actually support AMR
-        const char* lev = strstr(field->name, "_lev");
-        assert(lev != NULL);
-        int level;
-        int num_parsed = sscanf(lev, "_lev%d", &level);
-        assert(num_parsed == 1);
         mmd->numBlocks = 
-            openPMDFile.iterations[timeState].GetNumChunks(patch, level);
+            openPMDFile.iterations[timeState].GetNumChunks(patchNum);
         // Add mesh
         md->Add(mmd);
 
@@ -768,18 +762,11 @@ avtOpenPMDFileFormat::GetMesh(int timestate, int domain, const char *meshname)
                     // Treatment of the file in parallel
                     if (true)
                     {
-                        // TODO: get rid of this once we actually support AMR
-                        const char* lev = strstr(field->name, "_lev");
-                        assert(lev != NULL);
-                        int level;
-                        int num_parsed = sscanf(lev, "_lev%d", &level);
-                        assert(num_parsed == 1);
-
                         // Structure to store the block properties
                         fieldBlockStruct fieldBlock;
 
                         // We get the block properties
-                        openPMDFile.iterations[timestate].GetChunkProperties(level, domain, &fieldBlock);
+                        openPMDFile.iterations[timestate].GetChunkProperties(domain, &fieldBlock);
 
                         debug5    << "fieldBlock.minNode[0]: "
                                 << fieldBlock.minNode[0]
@@ -1791,18 +1778,11 @@ avtOpenPMDFileFormat::GetVar(int timestate, int domain, const char *varname)
                 // the scalar dataset by block
                 if (true)
                 {
-                    // TODO: get rid of this once we actually support AMR
-                    const char* lev = strstr(field->name, "_lev");
-                    assert(lev != NULL);
-                    int level;
-                    int num_parsed = sscanf(lev, "_lev%d", &level);
-                    assert(num_parsed == 1);
-
                     // Structure to store the block properties
                     fieldBlockStruct fieldBlock;
 
                     // We get the block properties
-                    openPMDFile.iterations[timestate].GetChunkProperties(level, domain, &fieldBlock);
+                    openPMDFile.iterations[timestate].GetChunkProperties(domain, &fieldBlock);
 
                     // Number of nodes
                     numValues = fieldBlock.nbTotalNodes;
@@ -1823,7 +1803,6 @@ avtOpenPMDFileFormat::GetVar(int timestate, int domain, const char *varname)
                                                             &factor,
                                                             field->dataClass,
                                                             &*field,
-                                                            level,
                                                             &fieldBlock);
 
                         // If no error, we return the array
@@ -1847,7 +1826,6 @@ avtOpenPMDFileFormat::GetVar(int timestate, int domain, const char *varname)
                                                             &factor,
                                                             field->dataClass,
                                                             &*field,
-                                                            level,
                                                             &fieldBlock);
 
                         // If no error, we return the array
@@ -3129,7 +3107,7 @@ void avtOpenPMDFileFormat::BuildDomainAuxiliaryInfo(int timeState) const {
     size_t numDims = 3;
     
     size_t numLevels = iteration.GetNumLevels(patchNum);
-    size_t numChunks = iteration.GetNumChunks();
+    size_t numChunks = iteration.GetNumChunks(patchNum);
     
     // build the avtDomainNesting object
     avtStructuredDomainNesting *dn = 

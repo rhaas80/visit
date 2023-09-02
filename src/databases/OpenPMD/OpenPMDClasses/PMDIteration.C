@@ -567,23 +567,16 @@ size_t PMDIteration::GetNumPatches() const {
 	return patchChunks.size();
 }
 
-size_t PMDIteration::GetNumLevels(size_t patchNum) const {
+size_t PMDIteration::GetNumLevels(size_t const patchNum) const {
 	return patchChunks[patchNum].size();
-}
-
-//number of chunks in a level
-size_t PMDIteration::GetNumChunks(size_t patchNum, size_t levelNum) const {
-	return patchChunks[patchNum][levelNum].size();
 }
 
 // total chunks. Could be needlessly long, but we don't expect the 
 // vectors to get large
-size_t PMDIteration::GetNumChunks() const {
+size_t PMDIteration::GetNumChunks(size_t const patchNum) const {
 	size_t numChunks = 0;
-	for (const vector<vector<chunk_t>>& patch : patchChunks) {
-		for (const vector<chunk_t> level : patch) {
-			numChunks += level.size();
-		}
+	for (const vector<chunk_t>& level : patchChunks[patchNum]) {
+		numChunks += level.size();
 	}
 	return numChunks;
 }
@@ -723,7 +716,7 @@ void PMDIteration::PrintInfo()
 // Purpose:
 //			 This method returns the extents of a chunk
 // Inputs:
-// level: refinement level (assuming patch 0)
+// domain: VisIt domain number
 //
 // Programmer: Roland Haas
 // Creation:   Fri Jul 14 2023
@@ -731,28 +724,36 @@ void PMDIteration::PrintInfo()
 // Modifications:
 //
 // ***************************************************************************
-void PMDIteration::GetChunkProperties(int const level, int const chunknum, fieldBlockStruct * const fieldBlock) const
+void PMDIteration::GetChunkProperties(int const domain, fieldBlockStruct * const fieldBlock) const
 {
-		const size_t patch = 0;	
-        assert(chunknum >= 0 && chunknum < GetNumChunks(patch, level));
+	const size_t patchNum = 0;
+        assert(domain >= 0 && domain < GetNumChunks(patchNum));
 
-        const chunk_t& chunk(this->patchChunks[patch][level][chunknum]);
-		// TDOO: do not hard-code dimenstion
-		fieldBlock->ndims = 3; // hard coded for now`
-		fieldBlock->nbNodes[0] = chunk.upper[0] - chunk.lower[0];
-		fieldBlock->nbNodes[1] = chunk.upper[1] - chunk.lower[1];
-		fieldBlock->nbNodes[2] = chunk.upper[2] - chunk.lower[2];
+	size_t chunkNum = 0;
+	for (const vector<chunk_t>& level : patchChunks[patchNum]) {
+	        for (const chunk_t& chunk : level) {
+			if(chunkNum == domain) {
+				// TDOO: do not hard-code dimenstion
+				fieldBlock->ndims = 3; // hard coded for now`
+				fieldBlock->nbNodes[0] = chunk.upper[0] - chunk.lower[0];
+				fieldBlock->nbNodes[1] = chunk.upper[1] - chunk.lower[1];
+				fieldBlock->nbNodes[2] = chunk.upper[2] - chunk.lower[2];
 
-        fieldBlock->minNode[0] = chunk.lower[0];
-        fieldBlock->minNode[1] = chunk.lower[1];
-        fieldBlock->minNode[2] = chunk.lower[2];
+				fieldBlock->minNode[0] = chunk.lower[0];
+				fieldBlock->minNode[1] = chunk.lower[1];
+				fieldBlock->minNode[2] = chunk.lower[2];
 
-        fieldBlock->maxNode[0] = chunk.upper[0] - 1;
-        fieldBlock->maxNode[1] = chunk.upper[1] - 1;
-        fieldBlock->maxNode[2] = chunk.upper[2] - 1;
+				fieldBlock->maxNode[0] = chunk.upper[0] - 1;
+				fieldBlock->maxNode[1] = chunk.upper[1] - 1;
+				fieldBlock->maxNode[2] = chunk.upper[2] - 1;
 
-        fieldBlock->nbTotalNodes = fieldBlock->nbNodes[0] * fieldBlock->nbNodes[1] * fieldBlock->nbNodes[2];
+				fieldBlock->nbTotalNodes = fieldBlock->nbNodes[0] * fieldBlock->nbNodes[1] * fieldBlock->nbNodes[2];
 
-        // TODO: do not just use a dummy string
-        strncpy(fieldBlock->dataSetPath, "<DONOTUSE>", sizeof(fieldBlock->dataSetPath));
+				// TODO: do not just use a dummy string
+				strncpy(fieldBlock->dataSetPath, "<DONOTUSE>", sizeof(fieldBlock->dataSetPath));
+				break;
+                        }
+                        chunkNum += 1;
+                }
+	}
 }

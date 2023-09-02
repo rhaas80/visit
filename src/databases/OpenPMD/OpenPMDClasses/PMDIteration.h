@@ -57,11 +57,9 @@ class PMDIteration
 
 	const vector<chunk_t>& getChunk(size_t patchNum, size_t levelNum) const;
 	size_t  GetNumPatches() const;
-	size_t  GetNumLevels(size_t patchNum) const;
-	size_t  GetNumChunks(size_t patchNum, size_t levelNum) const;
-	size_t  GetNumChunks() const;
-  	// size_t  GetNumChunks(int const level) const;
-  	void    GetChunkProperties(int const level, int const domain, fieldBlockStruct * const fieldBlock) const;
+	size_t  GetNumLevels(size_t const patchNum) const;
+	size_t  GetNumChunks(size_t const patchNum) const;
+	void    GetChunkProperties(int const domain, fieldBlockStruct * const fieldBlock) const;
 
 
 
